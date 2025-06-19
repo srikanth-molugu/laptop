@@ -4,62 +4,144 @@
   <meta charset="UTF-8" />
   <title>Laptop Slot Booking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: sans-serif;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to right, #e6f4ea, #f3f9f2);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      width: 95%;
       max-width: 500px;
-      margin: auto;
-      padding: 1rem;
-      background-color: #f4f4f4;
+      margin-top: 40px;
+      padding: 30px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      transition: 0.3s ease-in-out;
     }
-    label, select, input {
+
+    h2 {
+      text-align: center;
+      color: #2e7d32;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
       display: block;
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 8px;
+      margin-bottom: 5px;
     }
-    button {
-      background-color: #28a745;
-      color: white;
-      padding: 10px;
-      border: none;
+
+    input, select {
       width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      transition: border 0.2s ease-in-out;
+    }
+
+    input:focus, select:focus {
+      border: 1px solid #4caf50;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #4caf50;
+      color: white;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
       cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #43a047;
+    }
+
+    #responseMsg {
+      text-align: center;
+      font-weight: 600;
+      margin-top: 15px;
+    }
+
+    .banner {
+      width: 100%;
+      max-width: 500px;
+      margin-top: 30px;
+    }
+
+    .banner img {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        margin-top: 20px;
+        padding: 20px;
+      }
+
+      h2 {
+        font-size: 22px;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Laptop Slot Booking</h2>
-  <form id="bookingForm">
-    <label>Email *</label>
-    <input type="email" name="email" required>
+  <div class="banner">
+    <img src="https://www.shutterstock.com/image-photo/business-performance-monitoring-concept-businessman-600nw-2351136011.jpg" alt="Laptop Booking Banner">
+  </div>
 
-    <label>Roll Number *</label>
-    <input type="text" name="rollNumber" required>
+  <div class="container">
+    <h2>Laptop Slot Booking</h2>
+    <form id="bookingForm">
+      <label>Email *</label>
+      <input type="email" name="email" required />
 
-    <label>Laptop Model *</label>
-    <input type="text" name="laptopModel" required>
+      <label>Roll Number *</label>
+      <input type="text" name="rollNumber" required />
 
-    <label>Booking Date *</label>
-    <input type="date" name="bookingDate" id="bookingDate" required>
+      <label>Laptop Model *</label>
+      <input type="text" name="laptopModel" required />
 
-    <label>Session *</label>
-    <select name="session" id="session" required>
-      <option value="">Select session</option>
-      <option value="morning">Morning</option>
-      <option value="afternoon">Afternoon</option>
-    
-    </select>
+      <label>Booking Date *</label>
+      <input type="date" name="bookingDate" id="bookingDate" required />
 
-    <button type="submit">Submit</button>
-    <p id="responseMsg"></p>
-  </form>
+      <label>Session *</label>
+      <select name="session" id="session" required>
+        <option value="">Select session</option>
+        <option value="morning">Morning</option>
+        <option value="afternoon">Afternoon</option>
+      </select>
+
+      <button type="submit">Submit</button>
+      <p id="responseMsg"></p>
+    </form>
+  </div>
 
   <script>
     const form = document.getElementById("bookingForm");
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzDAyQSXJPeqZvNK_hmBhm4Zm3RSzw6hwDl9bHefKkE_EWIW1ss54uc92udB0jCqRzmRA/exec"; // Replace this with your Apps Script web app URL
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzDAyQSXJPeqZvNK_hmBhm4Zm3RSzw6hwDl9bHefKkE_EWIW1ss54uc92udB0jCqRzmRA/exec";
 
     form.bookingDate.addEventListener("change", checkAvailability);
+
     async function checkAvailability() {
       const date = form.bookingDate.value;
       if (!date) return;
@@ -109,16 +191,17 @@
         const res = await fetch(scriptURL, {
           method: "POST",
           body: JSON.stringify(formData),
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" }
         });
 
         const result = await res.json();
         responseMsg.innerText = result.message;
+        responseMsg.style.color = result.status === "success" ? "green" : "red";
+
         if (result.status === "success") form.reset();
       } catch (err) {
         responseMsg.innerText = "Error submitting form.";
+        responseMsg.style.color = "red";
       }
     });
   </script>
