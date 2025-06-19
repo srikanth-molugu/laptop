@@ -103,6 +103,7 @@
       }
     }
   </style>
+  
 </head>
 <body>
   <div class="banner">
@@ -137,73 +138,85 @@
   </div>
 
   <script>
-    const form = document.getElementById("bookingForm");
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzC16plTrH7bt2DCaKgOLJiA0eL3TgHgrW8rYmNMo_g/devhttps://script.google.com/macros/s/AKfycbzDAyQSXJPeqZvNK_hmBhm4Zm3RSzw6hwDl9bHefKkE_EWIW1ss54uc92udB0jCqRzmRA/exec";
+  const form = document.getElementById("bookingForm");
+  const scriptURL = "https://script.google.com/macros/s/AKfycbzDAyQSXJPeqZvNK_hmBhm4Zm3RSzw6hwDl9bHefKkE_EWIW1ss54uc92udB0jCqRzmRA/exec";
+  const responseMsg = document.getElementById("responseMsg");
 
-    form.bookingDate.addEventListener("change", checkAvailability);
+  form.bookingDate.addEventListener("change", checkAvailability);
 
-    async function checkAvailability() {
-      const date = form.bookingDate.value;
-      if (!date) return;
+  async function checkAvailability() {
+    const date = form.bookingDate.value;
+    if (!date) return;
 
-      const sessionSelect = form.session;
-      sessionSelect.innerHTML = "<option value=''>Loading...</option>";
+    const sessionSelect = form.session;
+    sessionSelect.innerHTML = "<option value=''>Loading...</option>";
 
-      try {
-        const res = await fetch(scriptURL + "?check=true");
-        const data = await res.json();
+    try {
+      const res = await fetch(scriptURL + "?check=true");
+      const data = await res.json();
 
-        const morningKey = `${date}_morning`;
-        const afternoonKey = `${date}_afternoon`;
+      const morningKey = `${date}_morning`;
+      const afternoonKey = `${date}_afternoon`;
 
-        let morningFull = data[morningKey] >= 10;
-        let afternoonFull = data[afternoonKey] >= 10;
+      let morningFull = data[morningKey] >= 10;
+      let afternoonFull = data[afternoonKey] >= 10;
 
-        let options = "";
+      let options = "";
 
-        if (!morningFull) options += "<option value='morning'>Morning</option>";
-        if (!afternoonFull) options += "<option value='afternoon'>Afternoon</option>";
-        if (!morningFull && !afternoonFull) options += "<option value='both'>Both</option>";
+      if (!morningFull) options += "<option value='morning'>Morning</option>";
+      if (!afternoonFull) options += "<option value='afternoon'>Afternoon</option>";
+      if (!morningFull && !afternoonFull) options += "<option value='both'>Both</option>";
 
-        if (!options) {
-          options = "<option disabled>No sessions available</option>";
-        }
-
-        sessionSelect.innerHTML = options;
-      } catch (err) {
-        sessionSelect.innerHTML = "<option disabled>Error loading sessions</option>";
+      if (morningFull && afternoonFull) {
+        options = "<option disabled>No sessions available</option>";
       }
+
+      sessionSelect.innerHTML = options;
+    } catch (err) {
+      console.error("Session availability check failed:", err);
+      sessionSelect.innerHTML = "<option disabled>Error loading sessions</option>";
     }
+  }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const responseMsg = document.getElementById("responseMsg");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-      const formData = {
-        email: form.email.value,
-        rollNumber: form.rollNumber.value,
-        laptopModel: form.laptopModel.value,
-        bookingDate: form.bookingDate.value,
-        session: form.session.value
-      };
+    const formData = {
+      email: form.email.value,
+      rollNumber: form.rollNumber.value,
+      laptopModel: form.laptopModel.value,
+      bookingDate: form.bookingDate.value,
+      session: form.session.value
+    };
 
-      try {
-        const res = await fetch(scriptURL, {
-          method: "POST",
-          body: JSON.stringify(formData),
-          headers: { "Content-Type": "application/json" }
-        });
+    try {
+      const res = await fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" }
+      });
 
-        const result = await res.json();
-        responseMsg.innerText = result.message;
-        responseMsg.style.color = result.status === "success" ? "green" : "red";
+      const result = await res.json();
 
-        if (result.status === "success") form.reset();
-      } catch (err) {
-        responseMsg.innerText = "Error submitting form.";
+      // 🛑 Handle blocked status
+      if (result.status === "blocked" && result.nextAllowedSlot) {
+        const { date, session } = result.nextAllowedSlot;
+        responseMsg.innerText = `❌ Booking blocked! You can next book on ${date} (${session}).`;
         responseMsg.style.color = "red";
+        return;
       }
-    });
-  </script>
+
+      // ✅ Handle other responses
+      responseMsg.innerText = result.message;
+      responseMsg.style.color = result.status === "success" ? "green" : "red";
+
+      if (result.status === "success") form.reset();
+    } catch (err) {
+      console.error("Form submission error:", err);
+      responseMsg.innerText = "❌ Error submitting form.";
+      responseMsg.style.color = "red";
+    }
+  });
+</script>
 </body>
 </html>
