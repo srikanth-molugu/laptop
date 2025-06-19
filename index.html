@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Laptop Slot Booking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 500px;
+      margin: auto;
+      padding: 1rem;
+      background-color: #f4f4f4;
+    }
+    label, select, input {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      padding: 10px;
+      border: none;
+      width: 100%;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>Laptop Slot Booking</h2>
+  <form id="bookingForm">
+    <label>Email *</label>
+    <input type="email" name="email" required>
+
+    <label>Roll Number *</label>
+    <input type="text" name="rollNumber" required>
+
+    <label>Laptop Model *</label>
+    <input type="text" name="laptopModel" required>
+
+    <label>Booking Date *</label>
+    <input type="date" name="bookingDate" id="bookingDate" required>
+
+    <label>Session *</label>
+    <select name="session" id="session" required>
+      <option value="">Select session</option>
+      <option value="morning">Morning</option>
+      <option value="afternoon">Afternoon</option>
+      <option value="both">Both</option>
+    </select>
+
+    <button type="submit">Submit</button>
+    <p id="responseMsg"></p>
+  </form>
+
+  <script>
+    const form = document.getElementById("bookingForm");
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzDAyQSXJPeqZvNK_hmBhm4Zm3RSzw6hwDl9bHefKkE_EWIW1ss54uc92udB0jCqRzmRA/exec"; // Replace this with your Apps Script web app URL
+
+    form.bookingDate.addEventListener("change", checkAvailability);
+    async function checkAvailability() {
+      const date = form.bookingDate.value;
+      if (!date) return;
+
+      const sessionSelect = form.session;
+      sessionSelect.innerHTML = "<option value=''>Loading...</option>";
+
+      try {
+        const res = await fetch(scriptURL + "?check=true");
+        const data = await res.json();
+
+        const morningKey = `${date}_morning`;
+        const afternoonKey = `${date}_afternoon`;
+
+        let morningFull = data[morningKey] >= 10;
+        let afternoonFull = data[afternoonKey] >= 10;
+
+        let options = "";
+
+        if (!morningFull) options += "<option value='morning'>Morning</option>";
+        if (!afternoonFull) options += "<option value='afternoon'>Afternoon</option>";
+        if (!morningFull && !afternoonFull) options += "<option value='both'>Both</option>";
+
+        if (!options) {
+          options = "<option disabled>No sessions available</option>";
+        }
+
+        sessionSelect.innerHTML = options;
+      } catch (err) {
+        sessionSelect.innerHTML = "<option disabled>Error loading sessions</option>";
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const responseMsg = document.getElementById("responseMsg");
+
+      const formData = {
+        email: form.email.value,
+        rollNumber: form.rollNumber.value,
+        laptopModel: form.laptopModel.value,
+        bookingDate: form.bookingDate.value,
+        session: form.session.value
+      };
+
+      try {
+        const res = await fetch(scriptURL, {
+          method: "POST",
+          body: JSON.stringify(formData),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const result = await res.json();
+        responseMsg.innerText = result.message;
+        if (result.status === "success") form.reset();
+      } catch (err) {
+        responseMsg.innerText = "Error submitting form.";
+      }
+    });
+  </script>
+</body>
+</html>
