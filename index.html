@@ -4,219 +4,36 @@
   <meta charset="UTF-8" />
   <title>Laptop Slot Booking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(to right, #e6f4ea, #f3f9f2);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      background: #fff;
-      width: 95%;
-      max-width: 500px;
-      margin-top: 40px;
-      padding: 30px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      border-radius: 12px;
-      transition: 0.3s ease-in-out;
-    }
-
-    h2 {
-      text-align: center;
-      color: #2e7d32;
-      margin-bottom: 20px;
-    }
-
-    label {
-      font-weight: 600;
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      transition: border 0.2s ease-in-out;
-    }
-
-    input:focus, select:focus {
-      border: 1px solid #4caf50;
-      outline: none;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #4caf50;
-      color: white;
-      font-weight: 600;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #43a047;
-    }
-
-    #responseMsg {
-      text-align: center;
-      font-weight: 600;
-      margin-top: 15px;
-    }
-
-    .banner {
-      width: 100%;
-      max-width: 500px;
-      margin-top: 30px;
-    }
-
-    .banner img {
-      width: 100%;
-      border-radius: 10px;
-    }
-
-    @media (max-width: 600px) {
-      .container {
-        margin-top: 20px;
-        padding: 20px;
-      }
-
-      h2 {
-        font-size: 22px;
-      }
-    }
-  </style>
-  
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="banner">
-    <img src="https://www.shutterstock.com/image-photo/business-performance-monitoring-concept-businessman-600nw-2351136011.jpg" alt="Laptop Booking Banner">
-  </div>
-
-  <div class="container">
+  <div class="form-container">
     <h2>Laptop Slot Booking</h2>
     <form id="bookingForm">
-      <label>Email *</label>
+      <label>Email</label>
       <input type="email" name="email" required />
 
-      <label>Roll Number *</label>
+      <label>Roll Number</label>
       <input type="text" name="rollNumber" required />
 
-      <label>Laptop Model *</label>
+      <label>Laptop Model</label>
       <input type="text" name="laptopModel" required />
 
-      <label>Booking Date *</label>
+      <label>Date</label>
       <input type="date" name="bookingDate" id="bookingDate" required />
 
-      <label>Session *</label>
+      <label>Session</label>
       <select name="session" id="session" required>
-        <option value="">Select session</option>
-        <option value="morning">Morning</option>
-        <option value="afternoon">Afternoon</option>
+        <option value="">Select Session</option>
       </select>
 
-      <button type="submit">Submit</button>
-      <p id="responseMsg"></p>
+      <button type="submit">Book Slot</button>
     </form>
   </div>
 
-  <script>
-  const form = document.getElementById("bookingForm");
-  const scriptURL = "https://script.google.com/macros/s/AKfycbzDAyQSXJPeqZvNK_hmBhm4Zm3RSzw6hwDl9bHefKkE_EWIW1ss54uc92udB0jCqRzmRA/exec";
-  const responseMsg = document.getElementById("responseMsg");
+  <!-- Toast container -->
+  <div id="toastContainer"></div>
 
-  form.bookingDate.addEventListener("change", checkAvailability);
-
-  async function checkAvailability() {
-    const date = form.bookingDate.value;
-    if (!date) return;
-
-    const sessionSelect = form.session;
-    sessionSelect.innerHTML = "<option value=''>Loading...</option>";
-
-    try {
-      const res = await fetch(scriptURL + "?check=true");
-      const data = await res.json();
-
-      const morningKey = `${date}_morning`;
-      const afternoonKey = `${date}_afternoon`;
-
-      let morningFull = data[morningKey] >= 10;
-      let afternoonFull = data[afternoonKey] >= 10;
-
-      let options = "";
-
-      if (!morningFull) options += "<option value='morning'>Morning</option>";
-      if (!afternoonFull) options += "<option value='afternoon'>Afternoon</option>";
-      if (!morningFull && !afternoonFull) options += "<option value='both'>Both</option>";
-
-      if (morningFull && afternoonFull) {
-        options = "<option disabled>No sessions available</option>";
-      }
-
-      sessionSelect.innerHTML = options;
-    } catch (err) {
-      console.error("Session availability check failed:", err);
-      sessionSelect.innerHTML = "<option disabled>Error loading sessions</option>";
-    }
-  }
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const formData = {
-      email: form.email.value,
-      rollNumber: form.rollNumber.value,
-      laptopModel: form.laptopModel.value,
-      bookingDate: form.bookingDate.value,
-      session: form.session.value
-    };
-
-    try {
-      const res = await fetch(scriptURL, {
-        method: "POST",
-        body: JSON.stringify(formData),
-        headers: { "Content-Type": "application/json" }
-      });
-
-      const result = await res.json();
-
-      // 🛑 Handle blocked status
-      if (result.status === "blocked" && result.nextAllowedSlot) {
-        const { date, session } = result.nextAllowedSlot;
-        responseMsg.innerText = `❌ Booking blocked! You can next book on ${date} (${session}).`;
-        responseMsg.style.color = "red";
-        return;
-      }
-
-      // ✅ Handle other responses
-      responseMsg.innerText = result.message;
-      responseMsg.style.color = result.status === "success" ? "green" : "red";
-
-      if (result.status === "success") form.reset();
-    } catch (err) {
-      console.error("Form submission error:", err);
-      responseMsg.innerText = "❌ Error submitting form.";
-      responseMsg.style.color = "red";
-    }
-  });
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
